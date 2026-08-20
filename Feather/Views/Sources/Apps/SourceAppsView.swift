@@ -80,6 +80,7 @@ struct SourceAppsView: View {
 			}
 		}
 		.navigationTitle("التطبيقات")
+        .preferredColorScheme(.light) // 🔥 پاراستنی ڕووکەشی ڕووناک بۆ پەڕەکە
 		.searchable(text: $_searchText, placement: .platform(), prompt: "ابحث في التطبيقات...")
 		.toolbar {
 			NBToolbarMenu(
