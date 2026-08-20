@@ -2,7 +2,7 @@
 //  SourceAppsView.swift
 //  SY STORE
 //
-//  Modified for SY STORE - Unified Store (Ashtemobile Filter Fix).
+//  Modified for SY STORE - Unified Store (Reverse Filter).
 //
 
 import SwiftUI
@@ -10,6 +10,7 @@ import AltSourceKit
 import NimbleViews
 import UIKit
 
+// MARK: - Extension: View (Enil & Categories)
 extension SourceAppsView {
 	enum SortOption: String, CaseIterable {
 		case `default` = "default"
@@ -37,6 +38,7 @@ extension SourceAppsView {
     }
 }
 
+// MARK: - View
 struct SourceAppsView: View {
 	@AppStorage("SYStore.sortOptionRawValue") private var _sortOptionRawValue: String = SortOption.default.rawValue
 	@AppStorage("SYStore.sortAscending") private var _sortAscending: Bool = true
@@ -53,6 +55,7 @@ struct SourceAppsView: View {
 	@ObservedObject var viewModel: SourcesViewModel
 	@State private var _sources: [ASRepository]?
 	
+	// MARK: Body
 	var body: some View {
 		ZStack {
             if isLoading {
@@ -68,7 +71,6 @@ struct SourceAppsView: View {
 				)
 				.ignoresSafeArea()
 			} else {
-                // ئەگەر بەرنامەی نەدۆزیەوە ئەمە نیشان دەدات لەبری ئەوەی گیر بخوات
                 if #available(iOS 17, *) {
                     ContentUnavailableView("لا توجد تطبيقات", systemImage: "tray.fill", description: Text("يرجى التأكد من إضافة السورس في الإعدادات"))
                 } else {
@@ -108,15 +110,20 @@ struct SourceAppsView: View {
 		}
 	}
 	
+	// MARK: - جلب البيانات (فلترة عكسية)
 	private func _load() {
 		isLoading = true
 		
 		Task {
+            // استبعاد سورس ipa-black وعرض البقية
             let filteredSources = object.filter { rawSource in
-                if let urlString = rawSource.sourceURL?.absoluteString.lowercased() {
-                    return urlString.contains("ashtemobile.site")
+                let urlString = rawSource.sourceURL?.absoluteString.lowercased() ?? ""
+                let nameString = rawSource.name?.lowercased() ?? ""
+                
+                if urlString.contains("ipa-black") || nameString.contains("ipa-black") {
+                    return false
                 }
-                return false
+                return true
             }
             
 			let loadedSources = filteredSources.compactMap { viewModel.sources[$0] }
@@ -137,6 +144,7 @@ struct SourceAppsView: View {
 	}
 }
 
+// MARK: - Extension: View (Sort & Category)
 extension SourceAppsView {
     
     @ViewBuilder
