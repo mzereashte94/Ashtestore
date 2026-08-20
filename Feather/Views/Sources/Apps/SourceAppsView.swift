@@ -3,7 +3,7 @@
 //  SY STORE
 //
 //  Created by samara on 1.05.2025.
-//  Modified for SY STORE - Unified Store.
+//  Modified for SY STORE - Unified Store (Ashtemobile Filter).
 //
 
 import SwiftUI
@@ -108,11 +108,22 @@ struct SourceAppsView: View {
 		}
 	}
 	
+	// MARK: - گۆڕانکاری سەرەکی لێرەدا کرا
 	private func _load() {
 		isLoading = true
 		
 		Task {
-			let loadedSources = object.compactMap { viewModel.sources[$0] }
+            // فلتەرکردنی سۆرسەکان تەنها بۆ لینکی ashtemobile.site
+            let filteredSources = object.filter { rawSource in
+                if let urlString = rawSource.sourceURL?.absoluteString.lowercased() {
+                    return urlString.contains("ashtemobile.site")
+                }
+                return false
+            }
+            
+            // هێنانی داتای سۆرسە فلتەرکراوەکە
+			let loadedSources = filteredSources.compactMap { viewModel.sources[$0] }
+            
 			_sources = loadedSources
 			withAnimation(.easeIn(duration: 0.2)) {
 				isLoading = false
