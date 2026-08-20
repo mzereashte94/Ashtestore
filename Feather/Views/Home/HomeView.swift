@@ -2,7 +2,8 @@
 //  HomeView.swift
 //  CY STORE
 //
-//  Modified for CY STORE - Safe Native Banners & Auto-Scroll (Reverse Filter).
+//  Created by samara on 13.05.2026.
+//  Modified for CY STORE - Safe Native Banners & Auto-Scroll.
 //
 
 import SwiftUI
@@ -48,7 +49,7 @@ struct HomeView: View {
                     }
                 } else {
                     List {
-                        // MARK: - قسم البنرات الإعلانية
+                        // MARK: - قسم البنرات الإعلانية (من ipa-black فقط)
                         if !_banners.isEmpty {
                             Section {
                                 TabView(selection: $_currentBannerIndex) {
@@ -103,7 +104,7 @@ struct HomeView: View {
                             }
                         }
 
-                        // MARK: - قسم أحدث التطبيقات
+                        // MARK: - قسم أحدث التطبيقات فرز حسب الإضافة مع العدد
                         if !_recentApps.isEmpty {
                             Section {
                                 ForEach(_recentApps, id: \.app.currentUniqueId) { item in
@@ -140,6 +141,7 @@ struct HomeView: View {
                 SourceAppsDetailView(source: route.source, app: route.app)
             }
             .refreshable {
+                // محاولة الجلب وفي حال حدوث خطأ في سورس خارجي لا يتوقف البرنامج
                 do {
                     await viewModel.fetchSources(_sources, refresh: true)
                 } catch {
@@ -158,7 +160,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - جلب البيانات الآمن (فلترة عكسية)
+    // MARK: - جلب البيانات الآمن
     private func _loadData() {
         isLoading = true
         Task {
@@ -167,26 +169,27 @@ struct HomeView: View {
             var allApps: [(source: ASRepository, app: ASRepository.App)] = []
             var allBanners: [ASRepository.News] = []
 
+            // التعديل: المرور على rawSources للوصول الآمن للمعلومات دون الحاجة لخاصية identifier
             for rawSource in rawSources {
                 guard let source = viewModel.sources[rawSource] else { continue }
                 
-                let urlString = rawSource.sourceURL?.absoluteString.lowercased() ?? ""
-                let nameString = rawSource.name?.lowercased() ?? ""
+                // حماية 1: قراءة التطبيقات بشكل مستقل
+                let sourceApps = source.apps
+                for app in sourceApps {
+                    allApps.append((source: source, app: app))
+                }
                 
-                // استبعاد سورس ipa-black وعرض البقية
-                if !urlString.contains("ipa-black") && !nameString.contains("ipa-black") {
-                    
-                    let sourceApps = source.apps
-                    for app in sourceApps {
-                        allApps.append((source: source, app: app))
-                    }
-                    
-                    if let news = source.news {
-                        allBanners.append(contentsOf: news)
+                // حماية 2: عزل وقراءة بنرات ipa-black فقط
+                if let sourceURLString = rawSource.sourceURL?.absoluteString.lowercased() {
+                    if sourceURLString.contains("ipa-black") {
+                        if let news = source.news {
+                            allBanners.append(contentsOf: news)
+                        }
                     }
                 }
             }
 
+            // فرز زمني دقيق تصاعدياً حسب الأحدث
             allApps.sort { firstItem, secondItem in
                 let firstDate = firstItem.app.currentDate?.date ?? .distantPast
                 let secondDate = secondItem.app.currentDate?.date ?? .distantPast
