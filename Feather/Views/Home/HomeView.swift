@@ -1,9 +1,8 @@
 //
 //  HomeView.swift
-//  Ashtemobile
+//  CY STORE
 //
-//  Created by samara on 13.05.2026.
-//  Modified for CY STORE - Safe Native Banners & Auto-Scroll (Ashtemobile Source).
+//  Modified for CY STORE - Safe Native Banners & Auto-Scroll (Reverse Filter).
 //
 
 import SwiftUI
@@ -104,7 +103,7 @@ struct HomeView: View {
                             }
                         }
 
-                        // MARK: - قسم أحدث التطبيقات فرز حسب الإضافة مع العدد
+                        // MARK: - قسم أحدث التطبيقات
                         if !_recentApps.isEmpty {
                             Section {
                                 ForEach(_recentApps, id: \.app.currentUniqueId) { item in
@@ -159,7 +158,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - جلب البيانات الآمن
+    // MARK: - جلب البيانات الآمن (فلترة عكسية)
     private func _loadData() {
         isLoading = true
         Task {
@@ -168,30 +167,26 @@ struct HomeView: View {
             var allApps: [(source: ASRepository, app: ASRepository.App)] = []
             var allBanners: [ASRepository.News] = []
 
-            // جلب البيانات من سورس Ashtemobile فقط
             for rawSource in rawSources {
                 guard let source = viewModel.sources[rawSource] else { continue }
                 
-                if let sourceURLString = rawSource.sourceURL?.absoluteString.lowercased() {
+                let urlString = rawSource.sourceURL?.absoluteString.lowercased() ?? ""
+                let nameString = rawSource.name?.lowercased() ?? ""
+                
+                // استبعاد سورس ipa-black وعرض البقية
+                if !urlString.contains("ipa-black") && !nameString.contains("ipa-black") {
                     
-                    // لێرەدا کۆدەکە تەنها سەیری لینکی سۆرسەکەی تۆ دەکات
-                    if sourceURLString.contains("ashtemobile.site") {
-                        
-                        // هێنانی بەرنامەکان
-                        let sourceApps = source.apps
-                        for app in sourceApps {
-                            allApps.append((source: source, app: app))
-                        }
-                        
-                        // هێنانی بنەرەکان
-                        if let news = source.news {
-                            allBanners.append(contentsOf: news)
-                        }
+                    let sourceApps = source.apps
+                    for app in sourceApps {
+                        allApps.append((source: source, app: app))
+                    }
+                    
+                    if let news = source.news {
+                        allBanners.append(contentsOf: news)
                     }
                 }
             }
 
-            // فرز زمني دقيق تصاعدياً حسب الأحدث
             allApps.sort { firstItem, secondItem in
                 let firstDate = firstItem.app.currentDate?.date ?? .distantPast
                 let secondDate = secondItem.app.currentDate?.date ?? .distantPast
