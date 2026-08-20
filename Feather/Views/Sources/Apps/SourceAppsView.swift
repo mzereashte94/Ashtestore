@@ -2,8 +2,7 @@
 //  SourceAppsView.swift
 //  SY STORE
 //
-//  Created by samara on 1.05.2025.
-//  Modified for SY STORE - Unified Store (Ashtemobile Filter).
+//  Modified for SY STORE - Unified Store (Ashtemobile Filter Fix).
 //
 
 import SwiftUI
@@ -11,7 +10,6 @@ import AltSourceKit
 import NimbleViews
 import UIKit
 
-// MARK: - Extension: View (Enil & Categories)
 extension SourceAppsView {
 	enum SortOption: String, CaseIterable {
 		case `default` = "default"
@@ -39,7 +37,6 @@ extension SourceAppsView {
     }
 }
 
-// MARK: - View
 struct SourceAppsView: View {
 	@AppStorage("SYStore.sortOptionRawValue") private var _sortOptionRawValue: String = SortOption.default.rawValue
 	@AppStorage("SYStore.sortAscending") private var _sortAscending: Bool = true
@@ -56,32 +53,35 @@ struct SourceAppsView: View {
 	@ObservedObject var viewModel: SourcesViewModel
 	@State private var _sources: [ASRepository]?
 	
-	// MARK: Body
 	var body: some View {
 		ZStack {
-			if
-				let _sources,
-				!_sources.isEmpty
-			{
+            if isLoading {
+                ProgressView("جاري تحميل التطبيقات...")
+            } else if let _sources, !_sources.isEmpty {
 				SourceAppsTableRepresentableView(
 					sources: _sources,
 					searchText: $_searchText,
 					sortOption: $_sortOption,
 					sortAscending: $_sortAscending,
-                    selectedCategory: $_selectedCategory, // تمرير التصنيف
+                    selectedCategory: $_selectedCategory,
 					onSelect: {self._selectedRoute = $0}
 				)
 				.ignoresSafeArea()
 			} else {
-				ProgressView("جاري تحميل التطبيقات...") // تعريب نص التحميل
+                // ئەگەر بەرنامەی نەدۆزیەوە ئەمە نیشان دەدات لەبری ئەوەی گیر بخوات
+                if #available(iOS 17, *) {
+                    ContentUnavailableView("لا توجد تطبيقات", systemImage: "tray.fill", description: Text("يرجى التأكد من إضافة السورس في الإعدادات"))
+                } else {
+                    Text("لا توجد تطبيقات")
+                        .foregroundColor(.secondary)
+                }
 			}
 		}
-        // تثبيت العنوان ليكون "التطبيقات" دائماً بدلاً من عرض عدد المصادر
 		.navigationTitle("التطبيقات")
 		.searchable(text: $_searchText, placement: .platform(), prompt: "ابحث في التطبيقات...")
 		.toolbar {
 			NBToolbarMenu(
-				systemImage: "line.3.horizontal.decrease.circle", // أيقونة فلتر احترافية
+				systemImage: "line.3.horizontal.decrease.circle",
 				style: .icon,
 				placement: .topBarTrailing
 			) {
@@ -108,12 +108,10 @@ struct SourceAppsView: View {
 		}
 	}
 	
-	// MARK: - گۆڕانکاری سەرەکی لێرەدا کرا
 	private func _load() {
 		isLoading = true
 		
 		Task {
-            // فلتەرکردنی سۆرسەکان تەنها بۆ لینکی ashtemobile.site
             let filteredSources = object.filter { rawSource in
                 if let urlString = rawSource.sourceURL?.absoluteString.lowercased() {
                     return urlString.contains("ashtemobile.site")
@@ -121,13 +119,14 @@ struct SourceAppsView: View {
                 return false
             }
             
-            // هێنانی داتای سۆرسە فلتەرکراوەکە
 			let loadedSources = filteredSources.compactMap { viewModel.sources[$0] }
             
-			_sources = loadedSources
-			withAnimation(.easeIn(duration: 0.2)) {
-				isLoading = false
-			}
+            DispatchQueue.main.async {
+                self._sources = loadedSources
+                withAnimation(.easeIn(duration: 0.2)) {
+                    self.isLoading = false
+                }
+            }
 		}
 	}
 	
@@ -138,7 +137,6 @@ struct SourceAppsView: View {
 	}
 }
 
-// MARK: - Extension: View (Sort & Category)
 extension SourceAppsView {
     
     @ViewBuilder
