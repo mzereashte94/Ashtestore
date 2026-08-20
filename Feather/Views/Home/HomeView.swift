@@ -1,9 +1,9 @@
 //
 //  HomeView.swift
-//  CY STORE
+//  Ashtemobile
 //
 //  Created by samara on 13.05.2026.
-//  Modified for CY STORE - Safe Native Banners & Auto-Scroll.
+//  Modified for CY STORE - Safe Native Banners & Auto-Scroll (Ashtemobile Source).
 //
 
 import SwiftUI
@@ -49,7 +49,7 @@ struct HomeView: View {
                     }
                 } else {
                     List {
-                        // MARK: - قسم البنرات الإعلانية (من ipa-black فقط)
+                        // MARK: - قسم البنرات الإعلانية
                         if !_banners.isEmpty {
                             Section {
                                 TabView(selection: $_currentBannerIndex) {
@@ -141,7 +141,6 @@ struct HomeView: View {
                 SourceAppsDetailView(source: route.source, app: route.app)
             }
             .refreshable {
-                // محاولة الجلب وفي حال حدوث خطأ في سورس خارجي لا يتوقف البرنامج
                 do {
                     await viewModel.fetchSources(_sources, refresh: true)
                 } catch {
@@ -169,19 +168,22 @@ struct HomeView: View {
             var allApps: [(source: ASRepository, app: ASRepository.App)] = []
             var allBanners: [ASRepository.News] = []
 
-            // التعديل: المرور على rawSources للوصول الآمن للمعلومات دون الحاجة لخاصية identifier
+            // جلب البيانات من سورس Ashtemobile فقط
             for rawSource in rawSources {
                 guard let source = viewModel.sources[rawSource] else { continue }
                 
-                // حماية 1: قراءة التطبيقات بشكل مستقل
-                let sourceApps = source.apps
-                for app in sourceApps {
-                    allApps.append((source: source, app: app))
-                }
-                
-                // حماية 2: عزل وقراءة بنرات ipa-black فقط
                 if let sourceURLString = rawSource.sourceURL?.absoluteString.lowercased() {
-                    if sourceURLString.contains("ipa-black") {
+                    
+                    // لێرەدا کۆدەکە تەنها سەیری لینکی سۆرسەکەی تۆ دەکات
+                    if sourceURLString.contains("ashtemobile.site") {
+                        
+                        // هێنانی بەرنامەکان
+                        let sourceApps = source.apps
+                        for app in sourceApps {
+                            allApps.append((source: source, app: app))
+                        }
+                        
+                        // هێنانی بنەرەکان
                         if let news = source.news {
                             allBanners.append(contentsOf: news)
                         }
