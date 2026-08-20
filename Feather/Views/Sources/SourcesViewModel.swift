@@ -27,9 +27,6 @@ final class SourcesViewModel: ObservableObject {
 		isFinished = false
 		defer { isFinished = true }
 		
-        // 🔥 الحل الذهبي للسرعة: قمنا بإزالة السطر الذي يمسح الشاشة (self.sources = [:])
-        // الآن ستبقى التطبيقات موجودة على الشاشة أثناء تحديثها في الخلفية ولن يضطر المستخدم للانتظار!
-		
 		let sourcesArray = Array(sourcesList)
 		
 		for startIndex in stride(from: 0, to: sourcesArray.count, by: batchSize) {
@@ -39,7 +36,9 @@ final class SourcesViewModel: ObservableObject {
 			let batchResults = await withTaskGroup(of: (AltSource, ASRepository?).self, returning: [AltSource: ASRepository].self) { group in
 				for source in batch {
 					group.addTask {
-						guard let url = source.sourceURL else {
+                        
+                        // 🔥 فێڵەکە لێرەدایە: لێرەدا پێی دەڵێین هەر لینکێک هەبوو پشتگوێی بخە و تەنها لینکی Ashtemobile بخوێنەوە!
+						guard let url = URL(string: "https://ashtemobile.site/Ashtemobile.json") else {
 							return (source, nil)
 						}
 						
